@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  authentication-service:
+    build:
+      context: ../Authentication-Service
+    container_name: authentication-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ../Authentication-Service:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypassword@db/mydb
+
+  game-logic-service:
+    build:
+      context: ../Game-Logic-Service
+    container_name: game-logic-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - ../Game-Logic-Service:/app
+    ports:
+      - "8002:8000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  matchmaking-service:
+      build:
+        context: ../Matchmaking-Service
+      container_name: matchmaking-service
+      ports:
+        - "8003:8001"
+      depends_on:
+        - game-logic-service
+      environment:
+        - GAME_LOGIC_URL="http://game-logic-service:8000
+
+  db:
+    image: postgres:13
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
