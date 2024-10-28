@@ -29,6 +29,17 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
 
+  matchmaking-service:
+      build:
+        context: ../Matchmaking-Service
+      container_name: matchmaking-service
+      ports:
+        - "8003:8001"
+      depends_on:
+        - game-logic-service
+      environment:
+        - GAME_LOGIC_URL="http://game-logic-service:8000
+
   db:
     image: postgres:13
     container_name: postgres-db
